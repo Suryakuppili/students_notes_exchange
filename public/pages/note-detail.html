@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Note — NotesHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+    <main class="main-content">
+      <div id="main-loading" class="loading-overlay" style="padding:80px;"><div class="spinner"></div></div>
+      <div id="note-content" class="hidden">
+        <div class="page-header">
+          <!-- Breadcrumb -->
+          <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">
+            <a href="/" style="color:var(--text-muted);">NotesHub</a> /
+            <a href="/pages/notes.html" style="color:var(--text-muted);">Browse</a> /
+            <span id="breadcrumb-subject"></span>
+          </div>
+          <!-- Title + actions -->
+          <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+                <span class="badge" id="subject-badge"></span>
+                <span class="note-card-type badge" id="type-badge"></span>
+              </div>
+              <h1 style="font-size:1.6rem;margin-bottom:8px;" id="note-title">Loading…</h1>
+              <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;color:var(--text-muted);font-size:0.85rem;">
+                <span id="uploader-info"></span>
+                <span id="note-date"></span>
+                <span id="note-downloads"></span>
+                <span id="note-rating-summary"></span>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-shrink:0;flex-wrap:wrap;">
+              <button id="bookmark-btn" onclick="toggleBookmark()" class="btn btn-secondary" style="display:none;">🔖 Save</button>
+              <button id="flag-btn" onclick="showFlagModal()" class="btn btn-ghost btn-sm" style="display:none;">🚩 Flag</button>
+              <a id="download-btn" href="#" class="btn btn-primary" onclick="trackDownload()">⬇ Download</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="page-body">
+          <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;" id="detail-grid">
+
+            <!-- Left: preview + description + reviews -->
+            <div style="display:flex;flex-direction:column;gap:24px;">
+
+              <!-- Preview -->
+              <div class="card card-body" id="preview-section">
+                <h3 style="font-size:1rem;margin-bottom:16px;">👁 Preview</h3>
+                <div id="preview-container"></div>
+              </div>
+
+              <!-- Description + Tags -->
+              <div class="card card-body" id="desc-section">
+                <h3 style="font-size:1rem;margin-bottom:12px;">📝 About this note</h3>
+                <p id="note-description" style="margin-bottom:16px;"></p>
+                <div class="tags-row" id="note-tags"></div>
+              </div>
+
+              <!-- Rating Form (logged in only) -->
+              <div class="card card-body" id="rating-form-section" style="display:none;">
+                <h3 style="font-size:1rem;margin-bottom:16px;">⭐ Rate this note</h3>
+                <div class="stars stars-lg" id="rating-stars">
+                  <span class="star" data-val="1" onclick="setRating(1)">★</span>
+                  <span class="star" data-val="2" onclick="setRating(2)">★</span>
+                  <span class="star" data-val="3" onclick="setRating(3)">★</span>
+                  <span class="star" data-val="4" onclick="setRating(4)">★</span>
+                  <span class="star" data-val="5" onclick="setRating(5)">★</span>
+                </div>
+                <div id="rating-label" style="font-size:0.85rem;color:var(--text-muted);margin:8px 0 14px;">Click a star to rate</div>
+                <textarea id="review-text" class="form-textarea" placeholder="Write a review… (optional)" style="min-height:80px;"></textarea>
+                <div style="display:flex;gap:10px;margin-top:12px;">
+                  <button onclick="submitRating()" class="btn btn-primary btn-sm" id="rating-submit-btn">Submit Rating</button>
+                  <button onclick="deleteRating()" class="btn btn-danger btn-sm" id="rating-delete-btn" style="display:none;">Remove Rating</button>
+                </div>
+              </div>
+
+              <!-- Reviews List -->
+              <div class="card card-body" id="reviews-section">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                  <h3 style="font-size:1rem;">💬 Reviews</h3>
+                  <span class="badge badge-accent" id="review-count">0</span>
+                </div>
+                <div id="reviews-list">
+                  <div class="spinner" style="margin:0 auto;"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right: File info + uploader -->
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <!-- File details -->
+              <div class="card card-body">
+                <h3 style="font-size:1rem;margin-bottom:16px;">📋 Details</h3>
+                <div style="display:flex;flex-direction:column;gap:10px;font-size:0.88rem;">
+                  <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">File type</span><span id="detail-type" style="font-weight:600;"></span></div>
+                  <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">File size</span><span id="detail-size"></span></div>
+                  <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Subject</span><span id="detail-subject" style="font-weight:600;"></span></div>
+                  <div style="display:flex;justify-content:space-between;" id="detail-course-row"><span style="color:var(--text-muted);">Course</span><span id="detail-course"></span></div>
+                  <div style="display:flex;justify-content:space-between;" id="detail-uni-row"><span style="color:var(--text-muted);">University</span><span id="detail-university"></span></div>
+                  <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Uploaded</span><span id="detail-date"></span></div>
+                  <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Downloads</span><span id="detail-downloads"></span></div>
+                </div>
+                <a id="download-btn-side" href="#" class="btn btn-primary w-full" style="margin-top:16px;justify-content:center;" onclick="trackDownload()">⬇ Download</a>
+              </div>
+
+              <!-- Uploader info -->
+              <div class="card card-body" id="uploader-card">
+                <h3 style="font-size:1rem;margin-bottom:14px;">👤 Uploaded by</h3>
+                <div id="uploader-details"></div>
+              </div>
+
+              <!-- Admin actions -->
+              <div class="card card-body" id="admin-actions" style="display:none;">
+                <h3 style="font-size:1rem;margin-bottom:12px;color:var(--warning);">🛡️ Admin Actions</h3>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <button onclick="adminDelete()" class="btn btn-danger btn-sm">🗑 Delete Note</button>
+                  <button onclick="adminUnflag()" class="btn btn-success btn-sm" id="unflag-btn" style="display:none;">✅ Unflag Note</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Flag Modal -->
+  <div id="flag-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🚩 Flag Note</h3>
+        <button onclick="hideFlagModal()" class="btn btn-ghost btn-icon">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:16px;">Why are you flagging this note?</p>
+        <select id="flag-reason" class="form-select">
+          <option>Inappropriate content</option>
+          <option>Copyright violation</option>
+          <option>Spam or irrelevant</option>
+          <option>Misleading information</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button onclick="hideFlagModal()" class="btn btn-secondary">Cancel</button>
+        <button onclick="submitFlag()" class="btn btn-danger">Submit Flag</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    Nav.render('');
+
+    const noteId = new URLSearchParams(window.location.search).get('id');
+    if (!noteId) window.location.href = '/pages/notes.html';
+
+    const user = Auth.getUser();
+    let noteData = null;
+    let selectedRating = 0;
+
+    const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+
+    async function loadNote() {
+      try {
+        const { note, userRating, isBookmarked } = await api.getNote(noteId);
+        noteData = note;
+
+        document.title = `${note.title} — NotesHub`;
+
+        // Header
+        const typeLabel = fmt.fileType(note.file_type);
+        const typeClass = fmt.fileTypeClass(note.file_type);
+        document.getElementById('breadcrumb-subject').textContent = note.subject;
+        document.getElementById('subject-badge').textContent = note.subject;
+        document.getElementById('subject-badge').className = 'badge badge-accent';
+        document.getElementById('type-badge').textContent = typeLabel;
+        document.getElementById('type-badge').className = `note-card-type badge ${typeClass}`;
+        document.getElementById('note-title').textContent = note.title;
+
+        // Meta
+        document.getElementById('uploader-info').innerHTML = `
+          ${fmt.avatar(note.uploader_name, note.uploader_color)} ${escHtml(note.uploader_name || 'Unknown')}`;
+        document.getElementById('note-date').textContent = `📅 ${fmt.date(note.created_at)}`;
+        document.getElementById('note-downloads').textContent = `⬇ ${note.download_count} downloads`;
+        if (note.avg_rating > 0) {
+          document.getElementById('note-rating-summary').textContent = `★ ${note.avg_rating.toFixed(1)} (${note.rating_count} reviews)`;
+        }
+
+        // Details sidebar
+        document.getElementById('detail-type').textContent = typeLabel;
+        document.getElementById('detail-size').textContent = fmt.fileSize(note.file_size);
+        document.getElementById('detail-subject').textContent = note.subject;
+        if (note.course) document.getElementById('detail-course').textContent = note.course;
+        else document.getElementById('detail-course-row').style.display = 'none';
+        if (note.university) document.getElementById('detail-university').textContent = note.university;
+        else document.getElementById('detail-uni-row').style.display = 'none';
+        document.getElementById('detail-date').textContent = fmt.date(note.created_at);
+        document.getElementById('detail-downloads').textContent = note.download_count;
+
+        // Download links
+        const dlUrl = `/api/notes/${note.id}/download`;
+        document.getElementById('download-btn').href = dlUrl;
+        document.getElementById('download-btn-side').href = dlUrl;
+
+        // Description
+        document.getElementById('note-description').textContent = note.description || 'No description provided.';
+        const tags = Array.isArray(note.tags) ? note.tags : [];
+        if (tags.length) {
+          document.getElementById('note-tags').innerHTML = tags.map(t => `<span class="tag">${escHtml(t)}</span>`).join('');
+        } else {
+          document.getElementById('desc-section').querySelector('h3').textContent = '📝 Description';
+        }
+
+        // Preview
+        renderPreview(note);
+
+        // Uploader card
+        document.getElementById('uploader-details').innerHTML = `
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <a href="/pages/profile.html?id=${note.uploader_id}">
+              ${fmt.avatar(note.uploader_name, note.uploader_color, 'avatar-lg')}
+            </a>
+            <div>
+              <div style="font-weight:700;">${escHtml(note.uploader_name)}</div>
+              <div style="font-size:0.8rem;color:var(--text-muted);">${escHtml(note.uploader_university || '')}</div>
+            </div>
+          </div>
+          <a href="/pages/profile.html?id=${note.uploader_id}" class="btn btn-secondary w-full btn-sm" style="justify-content:center;">View Profile</a>
+        `;
+
+        // Auth-dependent UI
+        if (user) {
+          // Bookmark button
+          const bookmarkBtn = document.getElementById('bookmark-btn');
+          bookmarkBtn.style.display = '';
+          bookmarkBtn.textContent = isBookmarked ? '🔖 Saved' : '🔖 Save';
+          bookmarkBtn.className = isBookmarked ? 'btn btn-success' : 'btn btn-secondary';
+
+          // Flag button (not own note)
+          if (note.uploader_id !== user.id) {
+            document.getElementById('flag-btn').style.display = '';
+          }
+
+          // Rating form (not own note)
+          if (note.uploader_id !== user.id) {
+            document.getElementById('rating-form-section').style.display = '';
+            if (userRating) {
+              setRating(userRating.stars, false);
+              document.getElementById('review-text').value = userRating.review || '';
+              document.getElementById('rating-delete-btn').style.display = '';
+            }
+          }
+
+          // Admin actions
+          if (user.role === 'admin') {
+            document.getElementById('admin-actions').style.display = '';
+            if (note.is_flagged) document.getElementById('unflag-btn').style.display = '';
+          }
+        }
+
+        // Load reviews
+        await loadReviews();
+
+        document.getElementById('main-loading').style.display = 'none';
+        document.getElementById('note-content').classList.remove('hidden');
+
+        // Responsive detail grid
+        setDetailGrid();
+      } catch (err) {
+        document.getElementById('main-loading').innerHTML = `
+          <div class="empty-state"><div class="empty-icon">⚠️</div><h3>Note not found</h3>
+          <p>${err.message}</p><a href="/pages/notes.html" class="btn btn-primary mt-4">Browse Notes</a></div>`;
+      }
+    }
+
+    function renderPreview(note) {
+      const container = document.getElementById('preview-container');
+      if (note.file_type.includes('pdf')) {
+        container.innerHTML = `<iframe src="/api/notes/${note.id}/download#view=FitH" class="preview-frame" title="PDF Preview" style="height:520px;"></iframe>`;
+      } else if (note.file_type.startsWith('image')) {
+        container.innerHTML = `<img src="/api/notes/${note.id}/download" style="max-height:520px;width:100%;object-fit:contain;border-radius:8px;" alt="${escHtml(note.title)}" />`;
+      } else {
+        container.innerHTML = `
+          <div style="text-align:center;padding:40px;background:var(--bg-elevated);border-radius:10px;">
+            <div style="font-size:4rem;margin-bottom:12px;">${note.file_type.includes('word')||note.file_type.includes('doc')?'📘':note.file_type.includes('ppt')?'📊':'📄'}</div>
+            <p style="margin-bottom:16px;">Preview not available for this file type.<br>Download to view the full content.</p>
+            <a href="/api/notes/${note.id}/download" class="btn btn-primary" onclick="trackDownload()">⬇ Download ${fmt.fileType(note.file_type)}</a>
+          </div>`;
+      }
+    }
+
+    async function loadReviews() {
+      try {
+        const { ratings, total, distribution } = await api.getRatings(noteId);
+        document.getElementById('review-count').textContent = total;
+
+        const reviewsList = document.getElementById('reviews-list');
+        if (!ratings.length) {
+          reviewsList.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:20px 0;font-size:0.88rem;">No reviews yet. Be the first to review!</div>`;
+          return;
+        }
+        reviewsList.innerHTML = ratings.map(r => `
+          <div style="padding:14px 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                ${fmt.avatar(r.reviewer_name, r.reviewer_color)}
+                <div>
+                  <div style="font-weight:600;font-size:0.88rem;">${escHtml(r.reviewer_name)}</div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);">${fmt.timeAgo(r.created_at)}</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:2px;">${Array.from({length:5},(_,i)=>`<span style="color:${i<r.stars?'#f59e0b':'var(--text-muted)'}">★</span>`).join('')}</div>
+            </div>
+            ${r.review ? `<p style="font-size:0.88rem;color:var(--text-secondary);">${escHtml(r.review)}</p>` : ''}
+          </div>`).join('');
+      } catch {}
+    }
+
+    // Rating UI
+    function setRating(val, interactive = true) {
+      selectedRating = val;
+      const stars = document.querySelectorAll('#rating-stars .star');
+      stars.forEach((s, i) => s.classList.toggle('filled', i < val));
+      document.getElementById('rating-label').textContent = RATING_LABELS[val];
+      if (interactive) document.getElementById('rating-label').style.color = 'var(--warning)';
+    }
+
+    async function submitRating() {
+      if (!selectedRating) { toast.error('Please select a star rating.'); return; }
+      try {
+        const review = document.getElementById('review-text').value.trim();
+        await api.submitRating(noteId, { stars: selectedRating, review });
+        toast.success('Rating submitted! ⭐');
+        document.getElementById('rating-delete-btn').style.display = '';
+        await loadNote();
+      } catch (err) { toast.error(err.message); }
+    }
+
+    async function deleteRating() {
+      if (!confirm('Remove your rating?')) return;
+      try {
+        await api.deleteRating(noteId);
+        toast.info('Rating removed');
+        setRating(0, false);
+        document.getElementById('review-text').value = '';
+        document.getElementById('rating-delete-btn').style.display = 'none';
+        await loadNote();
+      } catch (err) { toast.error(err.message); }
+    }
+
+    // Bookmark toggle
+    async function toggleBookmark() {
+      if (!Auth.requireAuth()) return;
+      try {
+        const result = await api.bookmark(noteId);
+        const isNowSaved = result.message === 'Note bookmarked';
+        const btn = document.getElementById('bookmark-btn');
+        btn.textContent = isNowSaved ? '🔖 Saved' : '🔖 Save';
+        btn.className = isNowSaved ? 'btn btn-success' : 'btn btn-secondary';
+        toast.success(isNowSaved ? 'Note saved to your collection!' : 'Note removed from bookmarks');
+      } catch (err) { toast.error(err.message); }
+    }
+
+    function trackDownload() {
+      if (user) {} // backend auto-tracks on GET /api/notes/:id/download
+      setTimeout(() => {
+        if (document.getElementById('detail-downloads')) {
+          const cur = parseInt(document.getElementById('detail-downloads').textContent) || 0;
+          document.getElementById('detail-downloads').textContent = cur + 1;
+        }
+      }, 500);
+    }
+
+    // Flag
+    function showFlagModal() { document.getElementById('flag-modal').classList.remove('hidden'); }
+    function hideFlagModal() { document.getElementById('flag-modal').classList.add('hidden'); }
+    async function submitFlag() {
+      try {
+        const reason = document.getElementById('flag-reason').value;
+        await api.flagNote(noteId, reason);
+        toast.info('Note flagged for review. Thank you!');
+        hideFlagModal();
+      } catch (err) { toast.error(err.message); }
+    }
+
+    // Admin
+    async function adminDelete() {
+      if (!confirm('Permanently delete this note?')) return;
+      try {
+        await api.adminDeleteNote(noteId);
+        toast.success('Note deleted');
+        setTimeout(() => window.location.href = '/pages/notes.html', 1000);
+      } catch (err) { toast.error(err.message); }
+    }
+    async function adminUnflag() {
+      try {
+        await api.adminUnflagNote(noteId);
+        toast.success('Note unflagged');
+        document.getElementById('unflag-btn').style.display = 'none';
+      } catch (err) { toast.error(err.message); }
+    }
+
+    function setDetailGrid() {
+      const g = document.getElementById('detail-grid');
+      if (g) g.style.gridTemplateColumns = window.innerWidth < 900 ? '1fr' : '1fr 320px';
+    }
+    window.addEventListener('resize', setDetailGrid);
+
+    loadNote();
+  </script>
+</body>
+</html>

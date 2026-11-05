@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NotesHub — Student Notes Exchange Portal</title>
+  <meta name="description" content="Discover, share, and download study notes from students worldwide. Search across subjects, courses, and universities." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body class="landing-page">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="nav-brand">
+        <div class="nav-brand-icon">📚</div>
+        <span class="text-gradient">NotesHub</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/pages/notes.html">Browse</a></li>
+        <li><a href="/pages/notes.html?sort=top_rated">Top Rated</a></li>
+      </ul>
+      <div class="nav-actions" id="nav-actions">
+        <a href="/pages/login.html" class="btn btn-ghost btn-sm">Login</a>
+        <a href="/pages/register.html" class="btn btn-primary btn-sm">Get Started →</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">🎓 Trusted by 10,000+ students</div>
+        <h1>Share Knowledge,<br/><span class="text-gradient">Ace Your Exams</span></h1>
+        <p>The ultimate platform for students to exchange study notes, discover resources, and collaborate across subjects and universities.</p>
+        <div class="hero-actions">
+          <a href="/pages/notes.html" class="btn btn-primary btn-lg">Browse Notes →</a>
+          <a href="/pages/register.html" class="btn btn-secondary btn-lg">Upload Your Notes</a>
+        </div>
+        <!-- Live stats row -->
+        <div class="flex gap-6 mt-6" style="flex-wrap:wrap;">
+          <div><span class="stat-value" id="hero-notes" style="font-size:1.5rem;display:block;">—</span><span class="text-xs text-muted">Notes Shared</span></div>
+          <div><span class="stat-value" id="hero-users" style="font-size:1.5rem;display:block;">—</span><span class="text-xs text-muted">Students</span></div>
+          <div><span class="stat-value" id="hero-downloads" style="font-size:1.5rem;display:block;">—</span><span class="text-xs text-muted">Downloads</span></div>
+          <div><span class="stat-value" id="hero-subjects" style="font-size:1.5rem;display:block;">—</span><span class="text-xs text-muted">Subjects</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating cards decoration -->
+    <div style="position:absolute;right:5%;top:20%;display:none;flex-direction:column;gap:16px;pointer-events:none;" id="hero-deco">
+      <div class="card float" style="padding:16px 20px;width:220px;animation-delay:0s;">
+        <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:6px;">Physics Notes</div>
+        <div style="font-weight:700;font-size:0.95rem;">Quantum Mechanics</div>
+        <div style="display:flex;gap:4px;margin-top:8px;">★★★★★<span style="font-size:0.75rem;color:var(--text-muted);margin-left:4px;">5.0</span></div>
+      </div>
+      <div class="card float" style="padding:16px 20px;width:220px;animation-delay:1.2s;margin-left:30px;">
+        <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:6px;">Computer Science</div>
+        <div style="font-weight:700;font-size:0.95rem;">Data Structures & Algo</div>
+        <div style="display:flex;gap:4px;margin-top:8px;">★★★★☆<span style="font-size:0.75rem;color:var(--text-muted);margin-left:4px;">4.5</span></div>
+      </div>
+      <div class="card float" style="padding:16px 20px;width:220px;animation-delay:0.6s;">
+        <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:6px;">Mathematics</div>
+        <div style="font-weight:700;font-size:0.95rem;">Linear Algebra Complete</div>
+        <div style="display:flex;gap:4px;margin-top:8px;">★★★★★<span style="font-size:0.75rem;color:var(--text-muted);margin-left:4px;">4.9</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section" style="background:var(--bg-surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+    <div class="container">
+      <div style="text-align:center;margin-bottom:48px;">
+        <div class="section-label">✨ Features</div>
+        <h2 class="section-heading">Everything you need to <span class="text-gradient">study smarter</span></h2>
+        <p class="section-subtext" style="margin:0 auto;">A complete notes-sharing ecosystem built for modern students.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔍</div>
+          <h3>Smart Search</h3>
+          <p>Search notes by subject, course, university, or keyword. Find exactly what you need in seconds.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⭐</div>
+          <h3>Rating System</h3>
+          <p>Community-driven 5-star ratings and reviews help surface the best quality notes.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📁</div>
+          <h3>Collections</h3>
+          <p>Organize bookmarked notes into named collections for easy exam prep and revision.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📤</div>
+          <h3>Easy Upload</h3>
+          <p>Drag and drop PDFs, Word docs, PowerPoints, or images. Share your knowledge instantly.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👁️</div>
+          <h3>In-Browser Preview</h3>
+          <p>Preview PDFs and images right in the browser before downloading.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Safe & Moderated</h3>
+          <p>Community flagging system keeps the content clean. Admin moderation panel ensures quality.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Browse by Subject -->
+  <section class="section">
+    <div class="container">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="section-label">📖 Subjects</div>
+          <h2 class="section-heading">Browse by <span class="text-gradient">Subject</span></h2>
+        </div>
+        <a href="/pages/notes.html" class="btn btn-secondary">View all →</a>
+      </div>
+      <div class="subjects-grid" id="subjects-grid">
+        <!-- populated by JS -->
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=Mathematics'"><div class="subject-emoji">🔢</div><h4>Mathematics</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=Physics'"><div class="subject-emoji">⚛️</div><h4>Physics</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=Chemistry'"><div class="subject-emoji">🧪</div><h4>Chemistry</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=Biology'"><div class="subject-emoji">🧬</div><h4>Biology</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=Computer Science'"><div class="subject-emoji">💻</div><h4>CS</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=Engineering'"><div class="subject-emoji">⚙️</div><h4>Engineering</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=Economics'"><div class="subject-emoji">📈</div><h4>Economics</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=Medicine'"><div class="subject-emoji">🩺</div><h4>Medicine</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=Law'"><div class="subject-emoji">⚖️</div><h4>Law</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=History'"><div class="subject-emoji">📜</div><h4>History</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html?subject=Psychology'"><div class="subject-emoji">🧠</div><h4>Psychology</h4></div>
+        <div class="subject-card" onclick="window.location.href='/pages/notes.html'"><div class="subject-emoji">📚</div><h4>More...</h4></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent Notes -->
+  <section class="section" style="background:var(--bg-surface);border-top:1px solid var(--border);">
+    <div class="container">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="section-label">🆕 Latest</div>
+          <h2 class="section-heading">Recently <span class="text-gradient">Shared</span></h2>
+        </div>
+        <a href="/pages/notes.html" class="btn btn-secondary">View all notes →</a>
+      </div>
+      <div class="notes-grid" id="recent-notes">
+        <div class="loading-overlay" style="grid-column:1/-1;padding:40px;"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section">
+    <div class="container" style="text-align:center;">
+      <div style="max-width:600px;margin:0 auto;background:var(--grad-card);border:1px solid var(--border-accent);border-radius:var(--radius-xl);padding:60px 40px;">
+        <div style="font-size:3rem;margin-bottom:16px;">🚀</div>
+        <h2 style="margin-bottom:16px;">Start sharing your notes <span class="text-gradient">today</span></h2>
+        <p style="margin-bottom:28px;">Join thousands of students helping each other succeed. Upload your first set of notes and get instant community feedback.</p>
+        <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+          <a href="/pages/register.html" class="btn btn-primary btn-lg">Create Free Account</a>
+          <a href="/pages/notes.html" class="btn btn-secondary btn-lg">Browse First</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="nav-brand" style="margin-bottom:0;">
+            <div class="nav-brand-icon">📚</div>
+            <span class="text-gradient" style="font-size:1.1rem;font-weight:800;">NotesHub</span>
+          </div>
+          <p class="footer-brand-desc">The student notes exchange platform. Learn together, succeed together.</p>
+        </div>
+        <div>
+          <div class="footer-heading">Platform</div>
+          <ul class="footer-links">
+            <li><a href="/pages/notes.html">Browse Notes</a></li>
+            <li><a href="/pages/upload.html">Upload Notes</a></li>
+            <li><a href="/pages/register.html">Sign Up</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-heading">Subjects</div>
+          <ul class="footer-links">
+            <li><a href="/pages/notes.html?subject=Mathematics">Mathematics</a></li>
+            <li><a href="/pages/notes.html?subject=Physics">Physics</a></li>
+            <li><a href="/pages/notes.html?subject=Computer Science">Computer Science</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-heading">Account</div>
+          <ul class="footer-links">
+            <li><a href="/pages/login.html">Login</a></li>
+            <li><a href="/pages/dashboard.html">Dashboard</a></li>
+            <li><a href="/pages/profile.html">Profile</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2024 NotesHub. Built for students, by students.</span>
+        <span>Made with ❤️</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    // Update nav for logged-in users
+    const user = Auth.getUser();
+    if (user) {
+      document.getElementById('nav-actions').innerHTML = `
+        <a href="/pages/dashboard.html" class="btn btn-ghost btn-sm">Dashboard</a>
+        <a href="/pages/upload.html" class="btn btn-primary btn-sm">Upload Notes</a>
+      `;
+    }
+
+    // Show hero decoration on large screens
+    if (window.innerWidth > 1100) {
+      document.getElementById('hero-deco').style.display = 'flex';
+    }
+
+    // Load stats
+    api.getStats().then(data => {
+      document.getElementById('hero-notes').textContent = data.totalNotes.toLocaleString();
+      document.getElementById('hero-users').textContent = data.totalUsers.toLocaleString();
+      document.getElementById('hero-downloads').textContent = data.totalDownloads.toLocaleString();
+      document.getElementById('hero-subjects').textContent = data.totalSubjects.toLocaleString();
+    }).catch(() => {
+      ['hero-notes','hero-users','hero-downloads','hero-subjects'].forEach(id => {
+        document.getElementById(id).textContent = '0';
+      });
+    });
+
+    // Load recent notes
+    api.getNotes({ sort: 'newest', limit: 6 }).then(data => {
+      const grid = document.getElementById('recent-notes');
+      if (!data.notes.length) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">📂</div><h3>No notes yet</h3><p>Be the first to upload!</p><a href="/pages/upload.html" class="btn btn-primary mt-4">Upload Now</a></div>`;
+        return;
+      }
+      grid.innerHTML = data.notes.map(n => fmt.noteCard(n)).join('');
+    }).catch(() => {
+      document.getElementById('recent-notes').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">⚠️</div><p>Could not load notes</p></div>';
+    });
+  </script>
+</body>
+</html>

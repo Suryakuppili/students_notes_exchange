@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browse Notes — NotesHub</title>
+  <meta name="description" content="Search and browse student notes across all subjects, courses and universities." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="page-header">
+        <h1 style="font-size:1.6rem;">🔍 Browse Notes</h1>
+        <!-- Search Bar -->
+        <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+          <div class="search-bar" style="max-width:100%;flex:1;min-width:240px;">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" class="form-input" placeholder="Search notes by title, topic, tags…" style="padding-left:44px;" />
+          </div>
+          <button onclick="doSearch()" class="btn btn-primary" style="flex-shrink:0;">Search</button>
+        </div>
+        <!-- Filters -->
+        <div class="filters-bar" style="margin-top:14px;">
+          <span class="text-xs text-muted" style="margin-right:4px;">Subject:</span>
+          <div id="subject-chips" style="display:flex;flex-wrap:wrap;gap:6px;">
+            <button class="filter-chip active" data-subject="" onclick="setSubject('')">All</button>
+          </div>
+        </div>
+        <!-- Sort + type filters -->
+        <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;align-items:center;">
+          <span class="text-xs text-muted">Sort:</span>
+          <select id="sort-select" class="form-select" style="width:auto;padding:6px 12px;font-size:0.83rem;" onchange="doSearch()">
+            <option value="newest">Newest First</option>
+            <option value="top_rated">Top Rated</option>
+            <option value="most_downloaded">Most Downloaded</option>
+            <option value="most_reviewed">Most Reviewed</option>
+            <option value="oldest">Oldest</option>
+          </select>
+          <span class="text-xs text-muted" style="margin-left:8px;">Type:</span>
+          <select id="type-select" class="form-select" style="width:auto;padding:6px 12px;font-size:0.83rem;" onchange="doSearch()">
+            <option value="">All Types</option>
+            <option value="pdf">PDF</option>
+            <option value="docx">Word (DOCX)</option>
+            <option value="pptx">PowerPoint</option>
+            <option value="image">Image</option>
+            <option value="text">Text</option>
+          </select>
+          <span class="text-xs text-muted" id="results-count" style="margin-left:auto;"></span>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <div class="notes-grid" id="notes-grid">
+          <div class="loading-overlay" style="grid-column:1/-1;padding:40px;"><div class="spinner"></div></div>
+        </div>
+        <div id="pagination" class="pagination" style="margin-top:32px;"></div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    Nav.render('notes');
+
+    const SUBJECTS = [
+      { label: 'Mathematics', emoji: '🔢' },
+      { label: 'Physics', emoji: '⚛️' },
+      { label: 'Chemistry', emoji: '🧪' },
+      { label: 'Biology', emoji: '🧬' },
+      { label: 'Computer Science', emoji: '💻' },
+      { label: 'Engineering', emoji: '⚙️' },
+      { label: 'Economics', emoji: '📈' },
+      { label: 'History', emoji: '📜' },
+      { label: 'Literature', emoji: '📖' },
+      { label: 'Psychology', emoji: '🧠' },
+      { label: 'Law', emoji: '⚖️' },
+      { label: 'Medicine', emoji: '🩺' },
+      { label: 'Business', emoji: '💼' },
+      { label: 'Arts', emoji: '🎨' },
+      { label: 'Other', emoji: '📚' },
+    ];
+
+    // Render subject chips
+    const chipsEl = document.getElementById('subject-chips');
+    SUBJECTS.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-chip';
+      btn.dataset.subject = s.label;
+      btn.textContent = `${s.emoji} ${s.label}`;
+      btn.onclick = () => setSubject(s.label);
+      chipsEl.appendChild(btn);
+    });
+
+    let currentPage = 1;
+    let currentSubject = '';
+
+    // Read URL params on load
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('subject')) setSubject(urlParams.get('subject'), false);
+    if (urlParams.get('sort')) document.getElementById('sort-select').value = urlParams.get('sort');
+    if (urlParams.get('q')) document.getElementById('search-input').value = urlParams.get('q');
+
+    function setSubject(subject, search = true) {
+      currentSubject = subject;
+      currentPage = 1;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.subject === subject));
+      if (search) doSearch();
+    }
+
+    function doSearch(page = 1) {
+      currentPage = page;
+      const q = document.getElementById('search-input').value.trim();
+      const sort = document.getElementById('sort-select').value;
+      const type = document.getElementById('type-select').value;
+      loadNotes({ q, subject: currentSubject, sort, type, page: currentPage, limit: 12 });
+    }
+
+    async function loadNotes(params) {
+      const grid = document.getElementById('notes-grid');
+      grid.innerHTML = `<div class="loading-overlay" style="grid-column:1/-1;padding:40px;"><div class="spinner"></div></div>`;
+
+      try {
+        const data = await api.getNotes(params);
+        document.getElementById('results-count').textContent = `${data.total} note${data.total !== 1 ? 's' : ''} found`;
+
+        if (!data.notes.length) {
+          grid.innerHTML = `
+            <div class="empty-state" style="grid-column:1/-1;">
+              <div class="empty-icon">📭</div>
+              <h3>No notes found</h3>
+              <p>Try a different search or subject filter, or be the first to upload!</p>
+              <a href="/pages/upload.html" class="btn btn-primary mt-4">Upload Notes</a>
+            </div>`;
+          document.getElementById('pagination').innerHTML = '';
+          return;
+        }
+
+        grid.innerHTML = data.notes.map(n => fmt.noteCard(n)).join('');
+        renderPagination(data.page, data.totalPages);
+      } catch (err) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">⚠️</div><p>Error: ${err.message}</p></div>`;
+      }
+    }
+
+    function renderPagination(page, totalPages) {
+      const el = document.getElementById('pagination');
+      if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+      let html = '';
+      html += `<button class="page-btn" onclick="doSearch(${page-1})" ${page===1?'disabled':''}>←</button>`;
+      for (let i = Math.max(1,page-2); i <= Math.min(totalPages,page+2); i++) {
+        html += `<button class="page-btn ${i===page?'active':''}" onclick="doSearch(${i})">${i}</button>`;
+      }
+      html += `<button class="page-btn" onclick="doSearch(${page+1})" ${page===totalPages?'disabled':''}>→</button>`;
+      el.innerHTML = html;
+    }
+
+    // Search on enter key
+    document.getElementById('search-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doSearch();
+    });
+
+    // Initial load
+    doSearch();
+  </script>
+</body>
+</html>

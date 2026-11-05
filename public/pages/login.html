@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — NotesHub</title>
+  <meta name="description" content="Login to your NotesHub account to access, upload and manage study notes." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body class="auth-page">
+
+  <div class="auth-card animate-slide-up">
+    <div class="auth-logo">
+      <a href="/" style="text-decoration:none;">
+        <div class="auth-logo-icon">📚</div>
+        <div class="nav-brand" style="justify-content:center;">
+          <span class="text-gradient" style="font-size:1.3rem;font-weight:800;">NotesHub</span>
+        </div>
+      </a>
+    </div>
+
+    <h2 style="text-align:center;margin-bottom:4px;">Welcome back</h2>
+    <p style="text-align:center;margin-bottom:28px;font-size:0.9rem;">Sign in to continue to NotesHub</p>
+
+    <form class="auth-form" id="login-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="email">Email address</label>
+        <div class="input-group">
+          <span class="input-icon">📧</span>
+          <input type="email" id="email" class="form-input" placeholder="you@university.edu" autocomplete="email" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password" style="display:flex;justify-content:space-between;">
+          Password
+        </label>
+        <div class="input-group">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="password" class="form-input" placeholder="Your password" autocomplete="current-password" required />
+        </div>
+      </div>
+      <div id="login-error" class="form-error" style="display:none;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px;border:1px solid rgba(239,68,68,0.3);"></div>
+      <button type="submit" class="btn btn-primary w-full" id="login-btn" style="margin-top:4px;">
+        Sign in →
+      </button>
+    </form>
+
+    <div class="divider-text" style="margin:20px 0;"><span>or</span></div>
+
+    <!-- Demo credentials -->
+    <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:14px 16px;font-size:0.82rem;">
+      <div style="font-weight:600;color:var(--accent);margin-bottom:6px;">🔑 Demo Admin Credentials</div>
+      <div style="color:var(--text-muted);">Email: <code style="color:var(--text-primary);">admin@noteshub.com</code></div>
+      <div style="color:var(--text-muted);">Password: <code style="color:var(--text-primary);">Admin@123</code></div>
+      <button onclick="fillDemo()" class="btn btn-ghost btn-sm" style="margin-top:8px;font-size:0.78rem;padding:4px 10px;">Use Demo Login</button>
+    </div>
+
+    <p class="auth-footer">
+      Don't have an account? <a href="/pages/register.html">Create one free →</a>
+    </p>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (Auth.isLoggedIn()) window.location.href = '/pages/dashboard.html';
+
+    const form = document.getElementById('login-form');
+    const errorEl = document.getElementById('login-error');
+    const btn = document.getElementById('login-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!email || !password) {
+        errorEl.textContent = 'Please fill in all fields.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+      try {
+        await Auth.login(email, password);
+        const redirect = new URLSearchParams(window.location.search).get('redirect') || '/pages/dashboard.html';
+        window.location.href = redirect;
+      } catch (err) {
+        errorEl.textContent = err.message || 'Login failed. Please check your credentials.';
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Sign in →';
+      }
+    });
+
+    function fillDemo() {
+      document.getElementById('email').value = 'admin@noteshub.com';
+      document.getElementById('password').value = 'Admin@123';
+    }
+  </script>
+</body>
+</html>

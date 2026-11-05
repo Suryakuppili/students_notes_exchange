@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Environment variables (keep secrets safe!)
+.env
+
+# Database (auto-generated on first run)
+db/*.db
+db/*.db-shm
+db/*.db-wal
+
+# Uploaded files
+uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db

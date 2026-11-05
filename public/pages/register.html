@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up — NotesHub</title>
+  <meta name="description" content="Create a free NotesHub account and start sharing study notes with students worldwide." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body class="auth-page">
+
+  <div class="auth-card animate-slide-up">
+    <div class="auth-logo">
+      <a href="/" style="text-decoration:none;">
+        <div class="auth-logo-icon">📚</div>
+        <div class="nav-brand" style="justify-content:center;">
+          <span class="text-gradient" style="font-size:1.3rem;font-weight:800;">NotesHub</span>
+        </div>
+      </a>
+    </div>
+
+    <h2 style="text-align:center;margin-bottom:4px;">Create your account</h2>
+    <p style="text-align:center;margin-bottom:28px;font-size:0.9rem;">Join thousands of students sharing knowledge</p>
+
+    <form class="auth-form" id="register-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="name">Full name</label>
+        <div class="input-group">
+          <span class="input-icon">👤</span>
+          <input type="text" id="name" class="form-input" placeholder="Your full name" autocomplete="name" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email address</label>
+        <div class="input-group">
+          <span class="input-icon">📧</span>
+          <input type="email" id="email" class="form-input" placeholder="you@university.edu" autocomplete="email" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="university">University / College <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+        <div class="input-group">
+          <span class="input-icon">🏛️</span>
+          <input type="text" id="university" class="form-input" placeholder="e.g. MIT, Harvard, IIT Delhi" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="input-group">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="password" class="form-input" placeholder="At least 6 characters" autocomplete="new-password" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="confirm">Confirm password</label>
+        <div class="input-group">
+          <span class="input-icon">🔑</span>
+          <input type="password" id="confirm" class="form-input" placeholder="Repeat your password" autocomplete="new-password" required />
+        </div>
+      </div>
+
+      <!-- Password strength bar -->
+      <div id="pw-strength" style="display:none;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span class="text-xs text-muted">Password strength</span>
+          <span class="text-xs" id="pw-label">Weak</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="pw-fill" style="width:0%;"></div>
+        </div>
+      </div>
+
+      <div id="register-error" class="form-error" style="display:none;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px;border:1px solid rgba(239,68,68,0.3);"></div>
+
+      <button type="submit" class="btn btn-primary w-full" id="register-btn" style="margin-top:4px;">
+        Create Account →
+      </button>
+    </form>
+
+    <p class="auth-footer">
+      Already have an account? <a href="/pages/login.html">Sign in →</a>
+    </p>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    if (Auth.isLoggedIn()) window.location.href = '/pages/dashboard.html';
+
+    const pwInput = document.getElementById('password');
+    pwInput.addEventListener('input', () => {
+      const val = pwInput.value;
+      if (!val) { document.getElementById('pw-strength').style.display = 'none'; return; }
+      document.getElementById('pw-strength').style.display = 'block';
+      let strength = 0;
+      if (val.length >= 6) strength++;
+      if (val.length >= 10) strength++;
+      if (/[A-Z]/.test(val)) strength++;
+      if (/[0-9]/.test(val)) strength++;
+      if (/[^A-Za-z0-9]/.test(val)) strength++;
+      const labels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+      const colors = ['', '#ef4444', '#f59e0b', '#f59e0b', '#10b981', '#10b981'];
+      const widths = ['0%', '20%', '40%', '60%', '80%', '100%'];
+      document.getElementById('pw-fill').style.width = widths[strength];
+      document.getElementById('pw-fill').style.background = colors[strength];
+      const label = document.getElementById('pw-label');
+      label.textContent = labels[strength];
+      label.style.color = colors[strength];
+    });
+
+    const form = document.getElementById('register-form');
+    const errorEl = document.getElementById('register-error');
+    const btn = document.getElementById('register-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const university = document.getElementById('university').value.trim();
+      const password = document.getElementById('password').value;
+      const confirm = document.getElementById('confirm').value;
+
+      if (!name || !email || !password) {
+        errorEl.textContent = 'Please fill in all required fields.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (password.length < 6) {
+        errorEl.textContent = 'Password must be at least 6 characters.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (password !== confirm) {
+        errorEl.textContent = 'Passwords do not match.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Creating account…';
+      try {
+        await Auth.register(name, email, password, university);
+        toast.success('Account created! Welcome to NotesHub 🎉');
+        setTimeout(() => window.location.href = '/pages/dashboard.html', 1000);
+      } catch (err) {
+        errorEl.textContent = err.message || 'Registration failed. Please try again.';
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Create Account →';
+      }
+    });
+  </script>
+</body>
+</html>

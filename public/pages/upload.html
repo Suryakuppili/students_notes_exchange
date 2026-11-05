@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Notes — NotesHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="page-header">
+        <h1 style="font-size:1.6rem;">📤 Upload Notes</h1>
+        <p class="text-muted" style="margin:0;">Share your knowledge with the community</p>
+      </div>
+
+      <div class="page-body" style="max-width:760px;">
+
+        <!-- Drop Zone -->
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <input type="file" id="file-input" class="hidden" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.webp" />
+          <div id="drop-content">
+            <div class="drop-zone-icon">📂</div>
+            <h3 style="font-size:1.1rem;margin-bottom:8px;">Drag & drop your file here</h3>
+            <p>or click to browse</p>
+            <p class="text-xs text-muted" style="margin-top:8px;">Supports PDF, DOCX, PPT, TXT, Images · Max 50 MB</p>
+          </div>
+          <div id="file-preview" class="hidden">
+            <div style="font-size:2.5rem;" id="file-emoji">📄</div>
+            <div style="font-weight:600;margin-top:8px;" id="file-name-display">—</div>
+            <div style="color:var(--text-muted);font-size:0.82rem;margin-top:4px;" id="file-size-display">—</div>
+            <button onclick="clearFile(event)" class="btn btn-secondary btn-sm" style="margin-top:12px;">Change file</button>
+          </div>
+        </div>
+
+        <!-- Upload progress -->
+        <div id="upload-progress" class="hidden" style="margin-top:16px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span class="text-sm">Uploading…</span>
+            <span class="text-sm" id="progress-pct">0%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%;"></div></div>
+        </div>
+
+        <!-- Form -->
+        <form id="upload-form" style="margin-top:28px;display:flex;flex-direction:column;gap:20px;" novalidate>
+
+          <div class="form-group">
+            <label class="form-label" for="title">Title *</label>
+            <input type="text" id="title" class="form-input" placeholder="e.g. Thermodynamics Chapter 3 Notes" required maxlength="200" />
+            <span class="form-hint">Give a clear, descriptive title so others can find it easily</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="form-row-1">
+            <div class="form-group">
+              <label class="form-label" for="subject">Subject *</label>
+              <select id="subject" class="form-select" required>
+                <option value="" disabled selected>Select subject…</option>
+                <option>Mathematics</option>
+                <option>Physics</option>
+                <option>Chemistry</option>
+                <option>Biology</option>
+                <option>Computer Science</option>
+                <option>Engineering</option>
+                <option>Economics</option>
+                <option>History</option>
+                <option>Literature</option>
+                <option>Psychology</option>
+                <option>Law</option>
+                <option>Medicine</option>
+                <option>Business</option>
+                <option>Arts</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="course">Course / Module</label>
+              <input type="text" id="course" class="form-input" placeholder="e.g. PHYS 301, CS101" maxlength="100" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="university">University / College</label>
+            <input type="text" id="university" class="form-input" placeholder="e.g. MIT, IIT Bombay, Oxford" maxlength="150" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="tags">Tags</label>
+            <input type="text" id="tags" class="form-input" placeholder="e.g. exam, calculus, midterm (comma-separated)" maxlength="300" />
+            <span class="form-hint">Add up to 10 tags to help students find your notes</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="description">Description</label>
+            <textarea id="description" class="form-textarea" placeholder="What do these notes cover? Any important context or chapter info?" maxlength="1000"></textarea>
+          </div>
+
+          <div id="form-error" class="form-error" style="display:none;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px;border:1px solid rgba(239,68,68,0.3);"></div>
+
+          <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <a href="/pages/dashboard.html" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary" id="submit-btn" style="min-width:160px;">
+              📤 Upload Note
+            </button>
+          </div>
+        </form>
+
+        <!-- Success state -->
+        <div id="success-state" class="hidden" style="text-align:center;padding:48px 24px;">
+          <div style="font-size:4rem;margin-bottom:16px;animation:float 2s ease-in-out infinite;">🎉</div>
+          <h2 style="margin-bottom:8px;">Note Uploaded Successfully!</h2>
+          <p style="margin-bottom:24px;">Your notes are now live and searchable by all students.</p>
+          <div style="display:flex;gap:12px;justify-content:center;">
+            <a id="view-note-btn" href="#" class="btn btn-primary">View Note →</a>
+            <button onclick="resetForm()" class="btn btn-secondary">Upload Another</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    if (!Auth.requireAuth()) throw new Error('not authed');
+    Nav.render('upload');
+
+    // Fill university from profile
+    const user = Auth.getUser();
+    if (user?.university) document.getElementById('university').value = user.university;
+
+    // Responsive form grid
+    function setFormGrid() {
+      document.getElementById('form-row-1').style.gridTemplateColumns = window.innerWidth < 600 ? '1fr' : '1fr 1fr';
+    }
+    window.addEventListener('resize', setFormGrid);
+    setFormGrid();
+
+    let selectedFile = null;
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragging'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragging');
+      const file = e.dataTransfer.files[0];
+      if (file) setFile(file);
+    });
+    fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+    function setFile(file) {
+      if (file.size > 52428800) { toast.error('File too large. Maximum is 50MB.'); return; }
+      selectedFile = file;
+      document.getElementById('drop-content').classList.add('hidden');
+      document.getElementById('file-preview').classList.remove('hidden');
+      document.getElementById('file-name-display').textContent = file.name;
+      document.getElementById('file-size-display').textContent = fmt.fileSize(file.size);
+      const emojis = { 'pdf': '📕', 'doc': '📘', 'docx': '📘', 'ppt': '📊', 'pptx': '📊', 'txt': '📝' };
+      const ext = file.name.split('.').pop().toLowerCase();
+      document.getElementById('file-emoji').textContent = emojis[ext] || (file.type.startsWith('image') ? '🖼️' : '📄');
+    }
+
+    function clearFile(e) {
+      e.stopPropagation();
+      selectedFile = null;
+      fileInput.value = '';
+      document.getElementById('drop-content').classList.remove('hidden');
+      document.getElementById('file-preview').classList.add('hidden');
+    }
+
+    const form = document.getElementById('upload-form');
+    const errorEl = document.getElementById('form-error');
+    const btn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+
+      if (!selectedFile) { errorEl.textContent = 'Please select a file to upload.'; errorEl.style.display = 'block'; return; }
+      const title = document.getElementById('title').value.trim();
+      const subject = document.getElementById('subject').value;
+      if (!title) { errorEl.textContent = 'Please enter a title.'; errorEl.style.display = 'block'; return; }
+      if (!subject) { errorEl.textContent = 'Please select a subject.'; errorEl.style.display = 'block'; return; }
+
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('title', title);
+      formData.append('subject', subject);
+      formData.append('course', document.getElementById('course').value.trim());
+      formData.append('university', document.getElementById('university').value.trim());
+      formData.append('tags', document.getElementById('tags').value.trim());
+      formData.append('description', document.getElementById('description').value.trim());
+
+      btn.disabled = true;
+      btn.textContent = 'Uploading…';
+      document.getElementById('upload-progress').classList.remove('hidden');
+
+      // Simulate progress for UX
+      let pct = 0;
+      const progressInterval = setInterval(() => {
+        pct = Math.min(pct + Math.random() * 15, 85);
+        document.getElementById('progress-fill').style.width = pct + '%';
+        document.getElementById('progress-pct').textContent = Math.round(pct) + '%';
+      }, 200);
+
+      try {
+        const { note } = await api.uploadNote(formData);
+        clearInterval(progressInterval);
+        document.getElementById('progress-fill').style.width = '100%';
+        document.getElementById('progress-pct').textContent = '100%';
+
+        setTimeout(() => {
+          form.classList.add('hidden');
+          dropZone.classList.add('hidden');
+          document.getElementById('upload-progress').classList.add('hidden');
+          document.getElementById('success-state').classList.remove('hidden');
+          document.getElementById('view-note-btn').href = `/pages/note-detail.html?id=${note.id}`;
+        }, 500);
+        toast.success('Note uploaded successfully! 🎉');
+      } catch (err) {
+        clearInterval(progressInterval);
+        document.getElementById('upload-progress').classList.add('hidden');
+        errorEl.textContent = err.message || 'Upload failed. Please try again.';
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '📤 Upload Note';
+      }
+    });
+
+    function resetForm() {
+      form.reset();
+      form.classList.remove('hidden');
+      dropZone.classList.remove('hidden');
+      document.getElementById('success-state').classList.add('hidden');
+      selectedFile = null;
+      document.getElementById('drop-content').classList.remove('hidden');
+      document.getElementById('file-preview').classList.add('hidden');
+      btn.disabled = false;
+      btn.textContent = '📤 Upload Note';
+      if (user?.university) document.getElementById('university').value = user.university;
+    }
+  </script>
+</body>
+</html>

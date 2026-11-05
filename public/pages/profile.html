@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — NotesHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+    <main class="main-content">
+      <div id="profile-loading" class="loading-overlay" style="padding:80px;"><div class="spinner"></div></div>
+      <div id="profile-content" class="hidden">
+
+        <!-- Profile Header -->
+        <div style="background:var(--bg-surface);border-bottom:1px solid var(--border);padding:32px 40px;">
+          <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;">
+            <div id="profile-avatar" class="avatar-xl"></div>
+            <div style="flex:1;min-width:0;">
+              <h1 style="font-size:1.6rem;margin-bottom:4px;" id="profile-name">—</h1>
+              <p style="margin-bottom:8px;font-size:0.88rem;" id="profile-university"></p>
+              <p id="profile-bio" style="color:var(--text-secondary);margin-bottom:16px;max-width:560px;"></p>
+              <div style="display:flex;gap:20px;flex-wrap:wrap;" id="profile-stats">
+                <div><span style="font-weight:700;font-size:1.2rem;" id="ps-notes">—</span> <span class="text-muted text-sm">Notes</span></div>
+                <div><span style="font-weight:700;font-size:1.2rem;" id="ps-downloads">—</span> <span class="text-muted text-sm">Downloads</span></div>
+                <div><span style="font-weight:700;font-size:1.2rem;" id="ps-rating">—</span> <span class="text-muted text-sm">Avg Rating</span></div>
+              </div>
+            </div>
+            <div id="edit-btn-container"></div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div style="background:var(--bg-surface);border-bottom:1px solid var(--border);padding:0 40px;">
+          <div style="display:flex;gap:0;">
+            <button class="profile-tab active" id="tab-notes" onclick="switchTab('notes')">📄 Notes</button>
+            <button class="profile-tab" id="tab-collections" onclick="switchTab('collections')" style="display:none;">📁 Collections</button>
+          </div>
+        </div>
+
+        <div class="page-body">
+          <!-- Notes tab -->
+          <div id="tab-content-notes">
+            <div class="notes-grid" id="profile-notes-grid">
+              <div class="loading-overlay" style="grid-column:1/-1;padding:40px;"><div class="spinner"></div></div>
+            </div>
+            <div id="profile-notes-pagination" class="pagination" style="margin-top:24px;"></div>
+          </div>
+
+          <!-- Collections tab -->
+          <div id="tab-content-collections" class="hidden">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;" id="profile-collections-grid">
+              <div class="loading-overlay" style="grid-column:1/-1;padding:40px;"><div class="spinner"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div id="edit-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Edit Profile</h3>
+        <button onclick="hideEditModal()" class="btn btn-ghost btn-icon">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="edit-name" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">University / College</label>
+          <input type="text" id="edit-university" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bio</label>
+          <textarea id="edit-bio" class="form-textarea" placeholder="Tell other students a bit about yourself…"></textarea>
+        </div>
+        <div class="divider-text"><span>Change Password</span></div>
+        <div class="form-group">
+          <label class="form-label">Current Password</label>
+          <input type="password" id="edit-current-pw" class="form-input" placeholder="Leave blank to keep unchanged" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input type="password" id="edit-new-pw" class="form-input" placeholder="At least 6 characters" />
+        </div>
+        <div id="edit-error" class="form-error" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="hideEditModal()" class="btn btn-secondary">Cancel</button>
+        <button onclick="saveProfile()" class="btn btn-primary">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/nav.js"></script>
+  <style>
+    .profile-tab {
+      padding: 14px 20px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .profile-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .profile-tab:hover { color: var(--text-primary); }
+  </style>
+  <script>
+    Nav.render('profile');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const profileId = urlParams.get('id') || Auth.getUser()?.id;
+    const currentUser = Auth.getUser();
+    const isOwnProfile = currentUser && String(profileId) === String(currentUser.id);
+
+    let notesPage = 1;
+
+    async function loadProfile() {
+      if (!profileId) {
+        document.getElementById('profile-loading').innerHTML = `<div class="empty-state"><p>Please <a href="/pages/login.html" style="color:var(--accent)">log in</a> to view your profile.</p></div>`;
+        return;
+      }
+      try {
+        const { user, stats } = await api.getUser(profileId);
+
+        document.title = `${user.name} — NotesHub`;
+
+        // Avatar
+        const initials = user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+        const avatarEl = document.getElementById('profile-avatar');
+        avatarEl.textContent = initials;
+        avatarEl.style.background = user.avatar_color || '#6366f1';
+
+        document.getElementById('profile-name').textContent = user.name;
+        document.getElementById('profile-university').innerHTML = user.university ? `🏛️ ${escHtml(user.university)}` : '';
+        document.getElementById('profile-bio').textContent = user.bio || (isOwnProfile ? 'No bio yet. Edit your profile to add one!' : '');
+
+        document.getElementById('ps-notes').textContent = stats.noteCount;
+        document.getElementById('ps-downloads').textContent = stats.totalDownloads.toLocaleString();
+        document.getElementById('ps-rating').textContent = stats.avgRating > 0 ? `★ ${stats.avgRating}` : '—';
+
+        // Edit button
+        if (isOwnProfile) {
+          document.getElementById('edit-btn-container').innerHTML = `<button onclick="showEditModal()" class="btn btn-secondary">✏️ Edit Profile</button>`;
+          document.getElementById('tab-collections').style.display = '';
+        }
+
+        // Load notes
+        await loadProfileNotes();
+
+        if (isOwnProfile) {
+          await loadProfileCollections();
+        }
+
+        document.getElementById('profile-loading').style.display = 'none';
+        document.getElementById('profile-content').classList.remove('hidden');
+
+      } catch (err) {
+        document.getElementById('profile-loading').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Profile not found</h3><p>${err.message}</p></div>`;
+      }
+    }
+
+    async function loadProfileNotes(page = 1) {
+      notesPage = page;
+      const grid = document.getElementById('profile-notes-grid');
+      grid.innerHTML = `<div class="loading-overlay" style="grid-column:1/-1;padding:40px;"><div class="spinner"></div></div>`;
+      try {
+        const { notes, total } = await api.getUserNotes(profileId, { page, limit: 12 });
+        if (!notes.length) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+            <div class="empty-icon">📂</div>
+            <h3>${isOwnProfile ? "You haven't uploaded any notes yet" : "No notes yet"}</h3>
+            ${isOwnProfile ? `<a href="/pages/upload.html" class="btn btn-primary mt-4">Upload Your First Note</a>` : ''}
+          </div>`;
+          return;
+        }
+        grid.innerHTML = notes.map(n => fmt.noteCard(n)).join('');
+
+        // Pagination
+        const totalPages = Math.ceil(total / 12);
+        const pagEl = document.getElementById('profile-notes-pagination');
+        if (totalPages > 1) {
+          let html = '';
+          html += `<button class="page-btn" onclick="loadProfileNotes(${page-1})" ${page===1?'disabled':''}>←</button>`;
+          for (let i = Math.max(1,page-2); i <= Math.min(totalPages,page+2); i++) {
+            html += `<button class="page-btn ${i===page?'active':''}" onclick="loadProfileNotes(${i})">${i}</button>`;
+          }
+          html += `<button class="page-btn" onclick="loadProfileNotes(${page+1})" ${page===totalPages?'disabled':''}>→</button>`;
+          pagEl.innerHTML = html;
+        }
+      } catch (err) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>Error: ${err.message}</p></div>`; }
+    }
+
+    async function loadProfileCollections() {
+      const grid = document.getElementById('profile-collections-grid');
+      try {
+        const { collections } = await api.getCollections();
+        if (!collections.length) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">📁</div><h3>No collections yet</h3><p>Go to your dashboard to create a collection.</p></div>`;
+          return;
+        }
+        grid.innerHTML = collections.map(c => `
+          <div class="card card-body" style="cursor:pointer;" onclick="window.location.href='/pages/dashboard.html'">
+            <div style="font-size:2rem;margin-bottom:10px;">📁</div>
+            <h4>${escHtml(c.name)}</h4>
+            <p class="text-sm" style="color:var(--text-muted);margin:4px 0 12px;">${escHtml(c.description || 'No description')}</p>
+            <span class="badge badge-accent">${c.note_count} notes</span>
+          </div>`).join('');
+      } catch {}
+    }
+
+    function switchTab(tab) {
+      ['notes', 'collections'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+        document.getElementById(`tab-content-${t}`).classList.toggle('hidden', t !== tab);
+      });
+    }
+
+    // Edit modal
+    function showEditModal() {
+      const user = Auth.getUser();
+      document.getElementById('edit-name').value = user.name || '';
+      document.getElementById('edit-university').value = user.university || '';
+      document.getElementById('edit-bio').value = user.bio || '';
+      document.getElementById('edit-current-pw').value = '';
+      document.getElementById('edit-new-pw').value = '';
+      document.getElementById('edit-error').style.display = 'none';
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+    function hideEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
+
+    async function saveProfile() {
+      const name = document.getElementById('edit-name').value.trim();
+      const university = document.getElementById('edit-university').value.trim();
+      const bio = document.getElementById('edit-bio').value.trim();
+      const currentPw = document.getElementById('edit-current-pw').value;
+      const newPw = document.getElementById('edit-new-pw').value;
+      const errEl = document.getElementById('edit-error');
+      errEl.style.display = 'none';
+
+      try {
+        const { user } = await api.updateProfile({ name, university, bio });
+        Auth.updateUser(user);
+
+        if (currentPw && newPw) {
+          await api.changePassword({ currentPassword: currentPw, newPassword: newPw });
+          toast.success('Password changed!');
+        }
+
+        toast.success('Profile updated!');
+        hideEditModal();
+        loadProfile();
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>

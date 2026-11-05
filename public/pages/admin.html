@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — NotesHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#a855f7,#6366f1);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🛡️</div>
+          <div>
+            <h1 style="font-size:1.4rem;">Admin Panel</h1>
+            <p class="text-muted" style="margin:0;font-size:0.85rem;">Manage users, notes, and site activity</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <!-- Stats row -->
+        <div class="stats-grid mb-6" id="admin-stats">
+          <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value" id="as-users">—</div><div class="stat-label">Total Users</div></div>
+          <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value" id="as-notes">—</div><div class="stat-label">Total Notes</div></div>
+          <div class="stat-card"><div class="stat-icon">⬇️</div><div class="stat-value" id="as-downloads">—</div><div class="stat-label">Total Downloads</div></div>
+          <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value" id="as-ratings">—</div><div class="stat-label">Total Ratings</div></div>
+          <div class="stat-card" style="border-color:rgba(245,158,11,0.3);"><div class="stat-icon">🚩</div><div class="stat-value" id="as-flagged" style="color:var(--warning);">—</div><div class="stat-label">Flagged Notes</div></div>
+          <div class="stat-card" style="border-color:rgba(16,185,129,0.3);"><div class="stat-icon">📅</div><div class="stat-value" id="as-today-up" style="color:var(--success);">—</div><div class="stat-label">Today's Uploads</div></div>
+        </div>
+
+        <!-- Top Subjects -->
+        <div class="card card-body mb-6" id="subjects-section">
+          <h3 style="font-size:1rem;margin-bottom:16px;">📊 Top Subjects</h3>
+          <div id="subjects-bar"></div>
+        </div>
+
+        <!-- Tabs -->
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:24px;">
+          <button class="profile-tab active" id="atab-users" onclick="switchAdminTab('users')">👥 Users</button>
+          <button class="profile-tab" id="atab-notes" onclick="switchAdminTab('notes')">📄 All Notes</button>
+          <button class="profile-tab" id="atab-flagged" onclick="switchAdminTab('flagged')">🚩 Flagged</button>
+        </div>
+
+        <!-- Users tab -->
+        <div id="atab-content-users">
+          <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+            <div class="input-group" style="flex:1;min-width:200px;">
+              <span class="input-icon">🔍</span>
+              <input type="text" id="user-search" class="form-input" placeholder="Search users…" onkeydown="if(e.key==='Enter')loadUsers()" style="padding-left:40px;" />
+            </div>
+            <button onclick="loadUsers()" class="btn btn-secondary">Search</button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr>
+                <th>User</th><th>Email</th><th>University</th><th>Notes</th><th>Role</th><th>Joined</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="users-table-body">
+                <tr><td colspan="7" style="text-align:center;padding:40px;"><div class="spinner" style="margin:0 auto;"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="users-pagination" class="pagination" style="margin-top:16px;"></div>
+        </div>
+
+        <!-- Notes tab -->
+        <div id="atab-content-notes" class="hidden">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr>
+                <th>Title</th><th>Subject</th><th>Uploader</th><th>Downloads</th><th>Rating</th><th>Uploaded</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="notes-table-body">
+                <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Click "All Notes" tab to load.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="notes-pagination" class="pagination" style="margin-top:16px;"></div>
+        </div>
+
+        <!-- Flagged Notes tab -->
+        <div id="atab-content-flagged" class="hidden">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr>
+                <th>Title</th><th>Subject</th><th>Uploader</th><th>Flags</th><th>Uploaded</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="flagged-table-body">
+                <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">Click "Flagged" tab to load.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/nav.js"></script>
+  <style>
+    .profile-tab { padding:12px 18px;background:none;border:none;border-bottom:3px solid transparent;color:var(--text-muted);font-weight:600;font-size:0.88rem;cursor:pointer;transition:all 0.2s;font-family:inherit; }
+    .profile-tab.active { color:var(--accent);border-bottom-color:var(--accent); }
+    .profile-tab:hover { color:var(--text-primary); }
+  </style>
+  <script>
+    if (!Auth.isLoggedIn() || !Auth.isAdmin()) {
+      window.location.href = '/pages/login.html';
+    }
+    Nav.render('admin');
+
+    let activeAdminTab = 'users';
+    let usersLoaded = false, notesLoaded = false, flaggedLoaded = false;
+
+    async function loadStats() {
+      try {
+        const d = await api.adminStats();
+        document.getElementById('as-users').textContent = d.totalUsers.toLocaleString();
+        document.getElementById('as-notes').textContent = d.totalNotes.toLocaleString();
+        document.getElementById('as-downloads').textContent = d.totalDownloads.toLocaleString();
+        document.getElementById('as-ratings').textContent = d.totalRatings.toLocaleString();
+        document.getElementById('as-flagged').textContent = d.flaggedNotes;
+        document.getElementById('as-today-up').textContent = d.todayUploads;
+
+        // Subject bars
+        const maxCount = d.topSubjects[0]?.count || 1;
+        document.getElementById('subjects-bar').innerHTML = d.topSubjects.map(s => `
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            <div style="width:120px;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(s.subject)}</div>
+            <div style="flex:1;background:var(--bg-elevated);border-radius:99px;height:8px;">
+              <div style="height:8px;border-radius:99px;background:var(--grad-main);width:${(s.count/maxCount*100).toFixed(0)}%;transition:width 0.8s ease;"></div>
+            </div>
+            <div style="font-size:0.82rem;color:var(--text-muted);width:30px;text-align:right;">${s.count}</div>
+          </div>`).join('');
+      } catch (err) { toast.error('Failed to load stats: ' + err.message); }
+    }
+
+    async function loadUsers(page = 1) {
+      const q = document.getElementById('user-search')?.value?.trim() || '';
+      const tbody = document.getElementById('users-table-body');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;"><div class="spinner" style="margin:0 auto;"></div></td></tr>`;
+      try {
+        const { users, total } = await api.adminUsers({ q, page, limit: 20 });
+        if (!users.length) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">No users found</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = users.map(u => `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="avatar" style="background:${u.avatar_color||'#6366f1'}">${u.name.slice(0,2).toUpperCase()}</div>
+                <div><div style="font-weight:600;font-size:0.88rem;">${escHtml(u.name)}</div></div>
+              </div>
+            </td>
+            <td style="font-size:0.85rem;color:var(--text-muted);">${escHtml(u.email)}</td>
+            <td style="font-size:0.82rem;">${escHtml(u.university||'—')}</td>
+            <td><span class="badge badge-accent">${u.note_count}</span></td>
+            <td>
+              <span class="badge ${u.role==='admin'?'badge-warning':'badge-info'}">${u.role}</span>
+            </td>
+            <td style="font-size:0.82rem;color:var(--text-muted);">${fmt.date(u.created_at)}</td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <a href="/pages/profile.html?id=${u.id}" class="btn btn-ghost btn-icon btn-sm" title="View profile">👁</a>
+                ${u.role !== 'admin' ? `<button onclick="toggleRole(${u.id},'${u.role}')" class="btn btn-ghost btn-icon btn-sm" title="${u.role==='admin'?'Demote':'Promote to admin'}">🔑</button>` : ''}
+                <button onclick="deleteUser(${u.id})" class="btn btn-danger btn-icon btn-sm" title="Delete user">🗑</button>
+              </div>
+            </td>
+          </tr>`).join('');
+
+        // Pagination
+        const totalPages = Math.ceil(total / 20);
+        renderAdminPagination('users-pagination', page, totalPages, loadUsers);
+        usersLoaded = true;
+      } catch (err) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--error);">${err.message}</td></tr>`; }
+    }
+
+    async function loadAdminNotes(page = 1) {
+      const tbody = document.getElementById('notes-table-body');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;"><div class="spinner" style="margin:0 auto;"></div></td></tr>`;
+      try {
+        const { notes, total } = await api.adminNotes({ page, limit: 20 });
+        renderNotesTable(notes, tbody);
+        const totalPages = Math.ceil(total / 20);
+        renderAdminPagination('notes-pagination', page, totalPages, loadAdminNotes);
+        notesLoaded = true;
+      } catch (err) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--error);padding:24px;">${err.message}</td></tr>`; }
+    }
+
+    async function loadFlaggedNotes() {
+      const tbody = document.getElementById('flagged-table-body');
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;"><div class="spinner" style="margin:0 auto;"></div></td></tr>`;
+      try {
+        const { notes } = await api.adminNotes({ flagged: true, limit: 50 });
+        if (!notes.length) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--success);">✅ No flagged notes. All clear!</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = notes.map(n => `
+          <tr>
+            <td style="max-width:200px;"><a href="/pages/note-detail.html?id=${n.id}" style="font-weight:600;font-size:0.88rem;">${escHtml(n.title)}</a></td>
+            <td><span class="badge badge-accent">${escHtml(n.subject)}</span></td>
+            <td style="font-size:0.85rem;">${escHtml(n.uploader_name)}</td>
+            <td><span class="badge badge-error">🚩 ${n.flag_count}</span></td>
+            <td style="font-size:0.82rem;color:var(--text-muted);">${fmt.date(n.created_at)}</td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <button onclick="unflagNote(${n.id},this)" class="btn btn-success btn-sm">✅ Approve</button>
+                <button onclick="deleteAdminNote(${n.id},this)" class="btn btn-danger btn-sm">🗑 Delete</button>
+              </div>
+            </td>
+          </tr>`).join('');
+        flaggedLoaded = true;
+      } catch (err) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--error);padding:24px;">${err.message}</td></tr>`; }
+    }
+
+    function renderNotesTable(notes, tbody) {
+      if (!notes.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">No notes found</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = notes.map(n => `
+        <tr>
+          <td style="max-width:200px;"><a href="/pages/note-detail.html?id=${n.id}" style="font-weight:600;font-size:0.88rem;">${escHtml(n.title)}</a></td>
+          <td><span class="badge badge-accent">${escHtml(n.subject)}</span></td>
+          <td style="font-size:0.85rem;">${escHtml(n.uploader_name)}</td>
+          <td>${n.download_count}</td>
+          <td>${n.avg_rating > 0 ? `★ ${n.avg_rating.toFixed(1)}` : '—'}</td>
+          <td style="font-size:0.82rem;color:var(--text-muted);">${fmt.date(n.created_at)}</td>
+          <td>
+            <button onclick="deleteAdminNote(${n.id},this)" class="btn btn-danger btn-icon btn-sm">🗑</button>
+          </td>
+        </tr>`).join('');
+    }
+
+    function renderAdminPagination(elId, page, totalPages, fn) {
+      const el = document.getElementById(elId);
+      if (totalPages <= 1) { el.innerHTML = ''; return; }
+      let html = `<button class="page-btn" onclick="(${fn.name})(${page-1})" ${page===1?'disabled':''}>←</button>`;
+      for (let i = Math.max(1,page-2); i <= Math.min(totalPages,page+2); i++) {
+        html += `<button class="page-btn ${i===page?'active':''}" onclick="(${fn.name})(${i})">${i}</button>`;
+      }
+      html += `<button class="page-btn" onclick="(${fn.name})(${page+1})" ${page===totalPages?'disabled':''}>→</button>`;
+      el.innerHTML = html;
+    }
+
+    function switchAdminTab(tab) {
+      ['users', 'notes', 'flagged'].forEach(t => {
+        document.getElementById(`atab-${t}`).classList.toggle('active', t === tab);
+        document.getElementById(`atab-content-${t}`).classList.toggle('hidden', t !== tab);
+      });
+      activeAdminTab = tab;
+      if (tab === 'users' && !usersLoaded) loadUsers();
+      if (tab === 'notes' && !notesLoaded) loadAdminNotes();
+      if (tab === 'flagged' && !flaggedLoaded) loadFlaggedNotes();
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Delete this user and all their data?')) return;
+      try { await api.adminDeleteUser(id); toast.success('User deleted'); loadUsers(); }
+      catch (err) { toast.error(err.message); }
+    }
+
+    async function toggleRole(id, currentRole) {
+      const newRole = currentRole === 'admin' ? 'user' : 'admin';
+      if (!confirm(`Change role to "${newRole}"?`)) return;
+      try { await api.adminSetRole(id, newRole); toast.success('Role updated'); loadUsers(); }
+      catch (err) { toast.error(err.message); }
+    }
+
+    async function deleteAdminNote(id, btn) {
+      if (!confirm('Permanently delete this note?')) return;
+      try {
+        await api.adminDeleteNote(id);
+        toast.success('Note deleted');
+        btn.closest('tr').remove();
+      } catch (err) { toast.error(err.message); }
+    }
+
+    async function unflagNote(id, btn) {
+      try {
+        await api.adminUnflagNote(id);
+        toast.success('Note approved and unflagged');
+        btn.closest('tr').remove();
+        const cur = parseInt(document.getElementById('as-flagged').textContent) || 1;
+        document.getElementById('as-flagged').textContent = Math.max(0, cur-1);
+      } catch (err) { toast.error(err.message); }
+    }
+
+    // Search on Enter
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && document.activeElement.id === 'user-search') loadUsers();
+    });
+
+    // Initial load
+    loadStats();
+    loadUsers();
+  </script>
+</body>
+</html>

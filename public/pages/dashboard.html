@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — NotesHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar injected by nav.js -->
+    <main class="main-content">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1 style="font-size:1.6rem;" id="welcome-msg">Welcome back! 👋</h1>
+            <p class="text-muted" style="margin:0;">Here's what's happening on NotesHub</p>
+          </div>
+          <a href="/pages/upload.html" class="btn btn-primary">
+            📤 Upload Notes
+          </a>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <!-- Stats row -->
+        <div class="stats-grid mb-6" id="stats-row">
+          <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value" id="stat-uploads">—</div><div class="stat-label">Notes Uploaded</div></div>
+          <div class="stat-card"><div class="stat-icon">⬇️</div><div class="stat-value" id="stat-downloads">—</div><div class="stat-label">Total Downloads</div></div>
+          <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value" id="stat-rating">—</div><div class="stat-label">Avg Rating</div></div>
+          <div class="stat-card"><div class="stat-icon">📁</div><div class="stat-value" id="stat-collections">—</div><div class="stat-label">Collections</div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start;" class="dash-grid">
+
+          <!-- My Recent Notes -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <h2 style="font-size:1.1rem;">My Recent Notes</h2>
+              <a href="/pages/profile.html" class="btn btn-ghost btn-sm">View all →</a>
+            </div>
+            <div id="my-notes-list">
+              <div class="loading-overlay" style="padding:40px;"><div class="spinner"></div></div>
+            </div>
+          </div>
+
+          <!-- Right column -->
+          <div style="display:flex;flex-direction:column;gap:24px;">
+
+            <!-- Collections -->
+            <div class="card card-body">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                <h3 style="font-size:1rem;">📁 My Collections</h3>
+                <button onclick="showCreateCollection()" class="btn btn-ghost btn-sm">+ New</button>
+              </div>
+              <div id="collections-list">
+                <div class="spinner" style="margin:0 auto;"></div>
+              </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="card card-body">
+              <h3 style="font-size:1rem;margin-bottom:14px;">🔗 Quick Links</h3>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <a href="/pages/notes.html" class="btn btn-secondary btn-sm" style="justify-content:flex-start;gap:8px;">🔍 Browse All Notes</a>
+                <a href="/pages/notes.html?sort=top_rated" class="btn btn-secondary btn-sm" style="justify-content:flex-start;gap:8px;">⭐ Top Rated</a>
+                <a href="/pages/notes.html?sort=most_downloaded" class="btn btn-secondary btn-sm" style="justify-content:flex-start;gap:8px;">🔥 Most Downloaded</a>
+                <a href="/pages/upload.html" class="btn btn-secondary btn-sm" style="justify-content:flex-start;gap:8px;">📤 Upload New Note</a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Recommended Notes -->
+        <div style="margin-top:32px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h2 style="font-size:1.1rem;">🔍 Discover Notes</h2>
+            <a href="/pages/notes.html" class="btn btn-ghost btn-sm">Browse all →</a>
+          </div>
+          <div class="notes-grid" id="discover-notes">
+            <div class="loading-overlay" style="grid-column:1/-1;padding:40px;"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Collection Modal -->
+  <div id="collection-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Create Collection</h3>
+        <button onclick="hideModal()" class="btn btn-ghost btn-icon">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="collection-form" style="display:flex;flex-direction:column;gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Collection Name *</label>
+            <input type="text" id="col-name" class="form-input" placeholder="e.g. Exam Prep, CS101 Notes" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description (optional)</label>
+            <textarea id="col-desc" class="form-textarea" placeholder="What's in this collection?" style="min-height:80px;"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button onclick="hideModal()" class="btn btn-secondary">Cancel</button>
+        <button onclick="createCollection()" class="btn btn-primary" id="create-col-btn">Create →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    if (!Auth.requireAuth()) throw new Error('not authed');
+
+    const user = Auth.getUser();
+    Nav.render('dashboard');
+
+    document.getElementById('welcome-msg').textContent = `Welcome back, ${user.name.split(' ')[0]}! 👋`;
+
+    async function loadDashboard() {
+      try {
+        // Load user's notes
+        const { notes, total } = await api.getUserNotes(user.id, { limit: 5 });
+
+        document.getElementById('stat-uploads').textContent = total;
+        const totalDownloads = notes.reduce((s, n) => s + (n.download_count || 0), 0);
+        document.getElementById('stat-downloads').textContent = totalDownloads;
+        const ratings = notes.filter(n => n.avg_rating > 0);
+        const avgRating = ratings.length ? (ratings.reduce((s,n) => s + n.avg_rating, 0) / ratings.length).toFixed(1) : '—';
+        document.getElementById('stat-rating').textContent = avgRating;
+
+        // Render my notes
+        const notesList = document.getElementById('my-notes-list');
+        if (!notes.length) {
+          notesList.innerHTML = `<div class="empty-state"><div class="empty-icon">📂</div><h3>No notes yet</h3><p>Share your knowledge with other students!</p><a href="/pages/upload.html" class="btn btn-primary mt-4">Upload Your First Note</a></div>`;
+        } else {
+          notesList.innerHTML = notes.map(n => `
+            <div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg-card);margin-bottom:10px;cursor:pointer;transition:all 0.2s;" onclick="window.location.href='/pages/note-detail.html?id=${n.id}'" onmouseover="this.style.background='var(--bg-card-hover)'" onmouseout="this.style.background='var(--bg-card)'">
+              <div style="font-size:1.8rem;">${getFileEmoji(n.file_type)}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(n.title)}</div>
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;">${escHtml(n.subject)} · ⬇ ${n.download_count} · ${fmt.timeAgo(n.created_at)}</div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <a href="/pages/note-detail.html?id=${n.id}" class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation()">👁</a>
+                <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteNote(${n.id},this)">🗑</button>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Load discover notes
+        const { notes: discover } = await api.getNotes({ sort: 'top_rated', limit: 6 });
+        const discoverEl = document.getElementById('discover-notes');
+        if (!discover.length) {
+          discoverEl.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📂</div><p>No notes yet. <a href="/pages/upload.html" style="color:var(--accent)">Be the first!</a></p></div>`;
+        } else {
+          discoverEl.innerHTML = discover.map(n => fmt.noteCard(n)).join('');
+        }
+
+        // Load collections
+        await loadCollections();
+
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to load dashboard: ' + err.message);
+      }
+    }
+
+    async function loadCollections() {
+      try {
+        const { collections } = await api.getCollections();
+        document.getElementById('stat-collections').textContent = collections.length;
+        const el = document.getElementById('collections-list');
+        if (!collections.length) {
+          el.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:0.85rem;padding:12px 0;">No collections yet. <br>Create one to organise your bookmarks!</div>`;
+          return;
+        }
+        el.innerHTML = collections.map(c => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+            <a href="/pages/profile.html#col-${c.id}" style="font-size:0.88rem;font-weight:500;display:flex;align-items:center;gap:8px;">
+              📁 ${escHtml(c.name)}
+            </a>
+            <span class="badge badge-accent">${c.note_count}</span>
+          </div>
+        `).join('');
+      } catch {}
+    }
+
+    function getFileEmoji(mime) {
+      if (mime.includes('pdf')) return '📕';
+      if (mime.includes('word') || mime.includes('docx')) return '📘';
+      if (mime.includes('presentation') || mime.includes('powerpoint')) return '📊';
+      if (mime.includes('image')) return '🖼️';
+      return '📄';
+    }
+
+    async function deleteNote(id, btn) {
+      if (!confirm('Delete this note permanently?')) return;
+      try {
+        await api.deleteNote(id);
+        toast.success('Note deleted');
+        loadDashboard();
+      } catch (err) {
+        toast.error(err.message);
+      }
+    }
+
+    function showCreateCollection() {
+      document.getElementById('collection-modal').classList.remove('hidden');
+    }
+    function hideModal() {
+      document.getElementById('collection-modal').classList.add('hidden');
+    }
+
+    async function createCollection() {
+      const name = document.getElementById('col-name').value.trim();
+      const description = document.getElementById('col-desc').value.trim();
+      if (!name) { toast.error('Collection name is required'); return; }
+      try {
+        await api.createCollection({ name, description });
+        toast.success('Collection created!');
+        hideModal();
+        await loadCollections();
+      } catch (err) {
+        toast.error(err.message);
+      }
+    }
+
+    // Responsive grid
+    function setGridStyle() {
+      const g = document.querySelector('.dash-grid');
+      if (g) g.style.gridTemplateColumns = window.innerWidth < 900 ? '1fr' : '1fr 340px';
+    }
+    window.addEventListener('resize', setGridStyle);
+    setGridStyle();
+
+    loadDashboard();
+  </script>
+</body>
+</html>
