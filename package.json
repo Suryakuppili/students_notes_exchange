@@ -1,6 +1,10 @@
 {
   "name": "students-notes-exchange",
   "version": "1.0.0",
+    "engines": {
+    "node": "22.x"
+  }
+
   "description": "Online notes exchange portal for students",
   "main": "server.js",
   "scripts": {
